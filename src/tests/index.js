@@ -12,6 +12,34 @@ const FIXTURES_FOLDER = path.join(__dirname, 'fixtures')
 
 const ecmaVersion = 10
 
+const createSourceMapOptions = (filename, assert) => {
+  const sourceMap = {
+    mappings: [],
+    _file: filename,
+    addMapping({ original, generated: { line, column }, name, source }) {
+      const generated = { line, column }
+      assert.deepEqual(
+        { ...generated },
+        { ...original },
+        `generated and original do not match for ${filename}`,
+      )
+      assert.is(
+        source,
+        this._file,
+        `map source ${source} does not match the file ${this._file}`,
+      )
+      this.mappings.push({
+        original,
+        generated,
+        name,
+        source,
+      })
+    },
+  }
+
+  return sourceMap
+}
+
 const stripLocation = astravel.makeTraveler({
   go(node, state) {
     delete node.start
@@ -34,13 +62,18 @@ test('Syntax check', assert => {
   const files = fs.readdirSync(dirname).sort()
   const options = {
     ecmaVersion,
+    locations: true,
     sourceType: 'module',
   }
   files.forEach(filename => {
     const code = readFile(path.join(dirname, filename))
     const ast = parse(code, options)
+    const sourceMap = createSourceMapOptions(filename, assert)
+    const generated = generate(ast, {
+      sourceMap,
+    })
     assert.is(
-      generate(ast),
+      generated,
       code,
       filename.substring(0, filename.length - 3),
       'Generates code with the expected format',
@@ -102,9 +135,7 @@ test('Output stream', assert => {
 test('Comment generation', assert => {
   const dirname = path.join(FIXTURES_FOLDER, 'comment')
   const files = fs.readdirSync(dirname).sort()
-  const options = {
-    comments: true,
-  }
+
   files.forEach(filename => {
     const code = readFile(path.join(dirname, filename))
     const comments = []
@@ -114,31 +145,18 @@ test('Comment generation', assert => {
       onComment: comments,
     })
     astravel.attachComments(ast, comments)
-    assert.is(
-      generate(ast, options),
-      code,
-      filename.substring(0, filename.length - 3),
-    )
+    const sourceMap = createSourceMapOptions(filename, assert)
+    const generated = generate(ast, {
+      comments: true,
+      sourceMap,
+    })
+    assert.is(generated, code, filename.substring(0, filename.length - 3))
   })
 })
 
 test('Source map generation', assert => {
   const code = 'function f(x) {\n  return x;\n}\n'
-  const sourceMap = {
-    mappings: [],
-    _file: 'script.js',
-    addMapping({ original, generated: { line, column }, name, source }) {
-      const generated = { line, column }
-      assert.deepEqual(generated, { ...original })
-      assert.is(source, this._file)
-      this.mappings.push({
-        original,
-        generated,
-        name,
-        source,
-      })
-    },
-  }
+  const sourceMap = createSourceMapOptions('script.js', assert)
   const ast = parse(code, {
     ecmaVersion,
     locations: true,
@@ -150,7 +168,7 @@ test('Source map generation', assert => {
   assert.is(formattedCode, code)
 })
 
-test('Performance tiny code', assert => {
+test.skip('Performance tiny code', assert => {
   const result = benchmarkWithCode('var a = 2;', 'tiny code')
   assert.true(
     result['astring'].speed > result['escodegen'].speed,
@@ -170,7 +188,7 @@ test('Performance tiny code', assert => {
   )
 })
 
-test('Performance with everything', assert => {
+test.skip('Performance with everything', assert => {
   const result = benchmarkWithCode(
     readFile(path.join(FIXTURES_FOLDER, 'tree', 'es6.js')),
     'everything',
