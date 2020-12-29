@@ -57,9 +57,9 @@ const stripLocation = astravel.makeTraveler({
   },
 })
 
-test.only('Syntax check', assert => {
+test('Syntax check', assert => {
   const dirname = path.join(FIXTURES_FOLDER, 'syntax')
-  const files = ['template.js'] // fs.readdirSync(dirname).sort()
+  const files = fs.readdirSync(dirname).sort()
   const options = {
     ecmaVersion,
     locations: true,

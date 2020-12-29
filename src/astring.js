@@ -1024,8 +1024,8 @@ class State {
       mapping.name = node.name
       this.sourceMap.addMapping(mapping)
     }
-
-    if (code.length > 0) {
+    
+    /*if (code.length > 0) {
       if (this.lineEndSize > 0 && code.endsWith(this.lineEnd)) {
         this.line += this.lineEndSize
         this.column = 0
@@ -1035,6 +1035,15 @@ class State {
         this.column = 0
       } else {
         this.column += code.length
+      }
+    }*/
+
+    for (let char = 0; char < code.length; char++) {
+      if (code[char] === '\n') {
+        this.column = 0
+        this.line++
+      } else {
+        this.column++
       }
     }
   }
