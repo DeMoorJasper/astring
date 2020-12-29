@@ -14,7 +14,7 @@
     "build:demo": "npm run build:minified && cp dist/astring.min.* docs/demo/",
     "prepare": "npm run build",
     "test": "eslint src && prettier --list-different \"{src,scripts}/**/*.js\" \"bin/astring\" && npm run build:minified && nyc ava",
-    "test:watch": "ava --watch",
+    "test:watch": "NO_BENCHMARK=true ava --watch",
     "test:scripts": "npm run test:scripts:build && tap test/_scripts.js",
     "benchmark": "node --require esm ./src/tests/benchmark.js",
     "prettier": "prettier --write \"{src,scripts}/**/*.js\" \"bin/astring\"",
