@@ -675,9 +675,9 @@ export const baseGenerator = {
     state.write('await ', node)
     if (node.argument) {
       if (node.argument.type === 'ArrowFunctionExpression') {
-        state.write('(', node)
+        state.write('(')
         this[node.argument.type](node.argument, state)
-        state.write(')', node)
+        state.write(')')
       } else {
         this[node.argument.type](node.argument, state)
       }
@@ -1014,30 +1014,27 @@ class State {
   map(code, node) {
     if (node != null && node.loc != null) {
       const { mapping } = this
+      if (this.line !== node.loc.start.line || this.column !== node.loc.start.column) {
+        console.log(node)
+        console.log({generated: {line: this.line, column: this.column}, start: node.loc.start, end: node.loc.end})
+        console.log(this.output);
+        console.log(`"${code}"`)
+      }
       mapping.original = node.loc.start
       mapping.name = node.name
       this.sourceMap.addMapping(mapping)
     }
+
     if (code.length > 0) {
-      if (this.lineEndSize > 0) {
-        if (code.endsWith(this.lineEnd)) {
-          this.line += this.lineEndSize
-          this.column = 0
-        } else if (code[code.length - 1] === '\n') {
-          // Case of inline comment
-          this.line++
-          this.column = 0
-        } else {
-          this.column += code.length
-        }
+      if (this.lineEndSize > 0 && code.endsWith(this.lineEnd)) {
+        this.line += this.lineEndSize
+        this.column = 0
+      } else if (code[code.length - 1] === '\n') {
+        // Case of inline comment
+        this.line++
+        this.column = 0
       } else {
-        if (code[code.length - 1] === '\n') {
-          // Case of inline comment
-          this.line++
-          this.column = 0
-        } else {
-          this.column += code.length
-        }
+        this.column += code.length
       }
     }
   }
